@@ -20,20 +20,16 @@
                 <th scope="row">{{forloop.counter}}</th>
                 <td>{{todo.title}}</td>
                 <td>
-                    <a href="{% url 'update-todo' todo.id %}">
+                    <form method="POST" action="{% url 'update-todo' todo.id %}">
+                        {% csrf_token %}
                         <div class="form-check">
-                            {% if todo.is_finished == True %}
-                            <input class="form-check-input" type="checkbox" value="" checked>
-                            {% else %}
-                            <input class="form-check-input" type="checkbox" value="">
-                            {% endif %}
+                            <input class="form-check-input" type="checkbox" name="is_finished" value="on" {% if todo.is_finished %}checked{% endif %} onchange="this.form.submit()">
                             <label class="form-check-label text-light" for="flexCheckDefault">
                                 Mark as Completed
                             </label>
                         </div>
-                    </a>
+                    </form>
                 </td>
-
                 <td><a href="{% url 'delete-todo' todo.id %}"><i class="fa fa-trash fa-2x"></i></a></td>
             </tr>
             {% endfor %}

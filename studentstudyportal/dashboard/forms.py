@@ -10,12 +10,13 @@ class NotesForm(forms.ModelForm):
 class DateInput(forms.DateInput):
     input_type = 'date'
 
-
 class HomeworkForm(forms.ModelForm):
     class Meta:
         model = Homework
-        widget = {'due':DateInput()}
         fields = ['subject', 'title', 'description', 'due', 'is_finished']
+        widgets = {
+            'due': DateInput(),
+        }
 
 
 class DashboardForm(forms.Form):

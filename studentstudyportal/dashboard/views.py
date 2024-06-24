@@ -68,13 +68,14 @@ def homework(request):
     return render(request, 'dashboard/homework.html',context)
 
 
-def update_homework(request,pk=None):
-    homework = Homework.objects.get(id=pk)
-    if homework.is_finished == True:
-        homework.is_finished = False
-    else:
-        homework.is_finished = True
-    homework.save()
+def update_homework(request, pk=None):
+    homework = get_object_or_404(Homework, id=pk)
+    if request.method == 'POST':
+        if 'is_finished' in request.POST:
+            homework.is_finished = True
+        else:
+            homework.is_finished = False
+        homework.save()
     return redirect('homework')
 
 
@@ -152,13 +153,14 @@ def todo(request):
     return render(request,"dashboard/todo.html",context)
 
 
-def update_todo(request,pk=None):
-    todo = Todo.objects.get(id=pk)
-    if todo.is_finished == True:
-        todo.is_finished = False
-    else:
-        todo.is_finished = True
-    todo.save()
+def update_todo(request, pk=None):
+    todo = get_object_or_404(Todo, id=pk)
+    if request.method == 'POST':
+        if 'is_finished' in request.POST:
+            todo.is_finished = True
+        else:
+            todo.is_finished = False
+        todo.save()
     return redirect('todo')
 
 
