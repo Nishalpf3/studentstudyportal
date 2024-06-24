@@ -4,6 +4,7 @@ from django.contrib import messages
 from .forms import *
 from django.views import generic
 from youtubesearchpython import VideosSearch
+import requests
 # Create your views here.
 
 def home(request):
@@ -167,3 +168,44 @@ def update_todo(request, pk=None):
 def delete_todo(request,pk=None):
     Todo.objects.get(id=pk).delete()
     return redirect("todo")
+
+
+
+def books(request):
+    if request.method == "POST":
+        form = DashboardForm(request.POST)
+        text = request.POST['text']
+        url = "https://www.googleapis.com/books/v1/volumes?q=" + text  # Use https
+        try:
+            r = requests.get(url)
+            r.raise_for_status()  # Raise an HTTPError for bad responses
+            answer = r.json()
+            result_list = []
+            for i in range(min(10, len(answer['items']))):
+                item = answer['items'][i]
+                volume_info = item.get('volumeInfo', {})
+                image_links = volume_info.get('imageLinks', {})
+                result_dict = {
+                    'title': volume_info.get('title'),
+                    'subtitle': volume_info.get('subtitle'),
+                    'description': volume_info.get('description'),
+                    'count': volume_info.get('pageCount'),
+                    'categories': volume_info.get('categories'),
+                    'rating': volume_info.get('averageRating'),
+                    'thumbnail': image_links.get('thumbnail'),
+                    'preview': volume_info.get('previewLink'),
+                }
+                result_list.append(result_dict)
+            context = {
+                'form': form,
+                'results': result_list,
+            }
+            return render(request, 'dashboard/books.html', context)
+        except requests.exceptions.RequestException as e:
+            messages.error(request, f"An error occurred: {e}")
+            context = {'form': form}
+            return render(request, "dashboard/books.html", context)
+    else:
+        form = DashboardForm()
+    context = {'form': form}
+    return render(request, "dashboard/books.html", context)
