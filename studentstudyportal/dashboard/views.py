@@ -209,3 +209,46 @@ def books(request):
         form = DashboardForm()
     context = {'form': form}
     return render(request, "dashboard/books.html", context)
+
+def dictionary(request):
+    if request.method == "POST":
+        form = DashboardForm(request.POST)
+        text = request.POST.get('text')
+        url = f"https://api.dictionaryapi.dev/api/v2/entries/en_US/{text}"
+        try:
+            r = requests.get(url)
+            r.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
+            answer = r.json()
+            phonetics = answer[0]['phonetics'][0].get('text', 'N/A')
+            audio = answer[0]['phonetics'][0].get('audio', 'N/A')
+            definition = answer[0]['meanings'][0]['definitions'][0].get('definition', 'N/A')
+            example = answer[0]['meanings'][0]['definitions'][0].get('example', 'N/A')
+            synonyms = answer[0]['meanings'][0]['definitions'][0].get('synonyms', [])
+            context = {
+                'form': form,
+                'input': text,
+                'phonetics': phonetics,
+                'audio': audio,
+                'definition': definition,
+                'example': example,
+                'synonyms': synonyms,
+            }
+        except requests.exceptions.RequestException as e:
+            context = {
+                'form': form,
+                'input': text,
+                'error': str(e),  # Pass the error message to the context
+            }
+        except (IndexError, KeyError) as e:
+            context = {
+                'form': form,
+                'input': text,
+                'error': 'Error parsing the dictionary API response.',
+            }
+        return render(request, "dashboard/dictionary.html", context)
+    else:
+        form = DashboardForm()
+        context = {
+            'form': form
+        }
+    return render(request, "dashboard/dictionary.html", context)
