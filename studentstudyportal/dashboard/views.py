@@ -5,6 +5,7 @@ from .forms import *
 from django.views import generic
 from youtubesearchpython import VideosSearch
 import requests
+import wikipedia
 # Create your views here.
 
 def home(request):
@@ -252,3 +253,119 @@ def dictionary(request):
             'form': form
         }
     return render(request, "dashboard/dictionary.html", context)
+
+def wiki(request):
+    if request.method == "POST":
+        text = request.POST['text']
+        form = DashboardForm(request.POST)
+        try:
+            # Search for pages matching the query
+            search_results = wikipedia.search(text, results=1)
+            if not search_results:
+                raise wikipedia.exceptions.PageError(f"No results found for '{text}'")
+            
+            # Get the most relevant page
+            page = wikipedia.page(search_results[0])
+            
+            context = {
+                'form': form,
+                'title': page.title,
+                'link': page.url,
+                'details': page.summary
+            }
+        except wikipedia.exceptions.DisambiguationError as e:
+            context = {
+                'form': form,
+                'options': e.options,
+                'message': f"Your search term '{text}' resulted in a disambiguation. Please be more specific.",
+            }
+        except wikipedia.exceptions.PageError:
+            messages.error(request, f"No results found for '{text}'")
+            context = {'form': form}
+        except wikipedia.exceptions.WikipediaException as e:
+            messages.error(request, f"An error occurred: {e}")
+            context = {'form': form}
+        
+        return render(request, "dashboard/wiki.html", context)
+    else:
+        form = DashboardForm()
+        context = {'form': form}
+    return render(request, "dashboard/wiki.html", context)
+
+
+def conversion(request):
+    if request.method == "POST":
+        form = ConversionForm(request.POST)
+        if request.POST['measurement'] == 'length':
+            measurement_form = ConversionLengthForm()
+            context = {
+                'form':form,
+                'm_form':measurement_form,
+                'input':True
+            }
+            if 'input' in request.POST:
+                first = request.POST['measure1']
+                second = request.POST['measure2']
+                input = request.POST['input']
+                answer = ''
+                if input and int(input) >= 0:
+                    if first == 'yard' and second == 'foot':
+                        answer = f'{input} yard = {int(input)*3} foot'
+                    if first == 'foot' and second == 'yard':
+                        answer = f'{input} foot = {int(input)/3} yard'
+                context = {
+                    'form':form,
+                    'm_form':measurement_form,
+                    'input':True,
+                    'answer':answer
+                }
+        if request.POST['measurement'] == 'mass':
+            measurement_form = ConversionMassForm()
+            context = {
+                'form':form,
+                'm_form':measurement_form,
+                'input':True
+            }
+            if 'input' in request.POST:
+                first = request.POST['measure1']
+                second = request.POST['measure2']
+                input = request.POST['input']
+                answer = ''
+                if input and int(input) >= 0:
+                    if first == 'pound' and second == 'kilogram':
+                        answer = f'{input} pound = {int(input)*0.453592} kilogram'
+                    if first == 'kilogram' and second == 'pound':
+                        answer = f'{input} kilogram = {int(input)*2.2062} pound'
+                context = {
+                    'form':form,
+                    'm_form':measurement_form,
+                    'input':True,
+                    'answer':answer
+                }
+
+    else:
+        form = ConversionForm()
+        context = {
+            'form':form,
+            'input':False
+        }
+    return render(request,"dashboard/conversion.html",context)
+
+
+def register(request):
+    if request.method =='POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            messages.success(request,f"Account created For {username}!!..")
+            return redirect("login")
+    else:
+        form = UserRegistrationForm()
+    context = {
+        'form':form
+    }
+    return render(request,'dashboard/register.html',context)
+
+
+    
