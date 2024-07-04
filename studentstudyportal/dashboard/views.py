@@ -1,17 +1,22 @@
 from django.shortcuts import render
+from django import contrib
+
 from django.shortcuts import redirect, get_object_or_404
 from django.contrib import messages
 from .forms import *
 from django.views import generic
 from youtubesearchpython import VideosSearch
+from django.contrib.auth.views import LogoutView
+from django.urls import reverse_lazy
 import requests
 import wikipedia
+from django.contrib.auth.decorators import login_required
 # Create your views here.
 
 def home(request):
     return render (request,'dashboard/home.html')
 
-
+@login_required
 def notes(request):
     if request.method == "POST":
         form = NotesForm(request.POST)
@@ -26,6 +31,7 @@ def notes(request):
     return render (request, 'dashboard/notes.html',context)
 
 
+@login_required
 def delete_note(request, pk=None):
     Notes.objects.get(id=pk).delete()
     return redirect("notes")
@@ -33,7 +39,7 @@ def delete_note(request, pk=None):
 class NotesDetailView(generic.DetailView):
     model = Notes
 
-
+@login_required
 def homework(request):
     if request.method == "POST":
         form = HomeworkForm(request.POST)
@@ -69,7 +75,7 @@ def homework(request):
                }
     return render(request, 'dashboard/homework.html',context)
 
-
+@login_required
 def update_homework(request, pk=None):
     homework = get_object_or_404(Homework, id=pk)
     if request.method == 'POST':
@@ -81,7 +87,7 @@ def update_homework(request, pk=None):
     return redirect('homework')
 
 
-
+@login_required
 def delete_homework(request, pk=None):
     Homework.objects.get(id=pk).delete()
     return redirect("homework")
@@ -120,6 +126,8 @@ def youtube(request):
     context = {'form':form}
     return render(request, "dashboard/youtube.html", context)
 
+
+@login_required
 def todo(request):
     if request.method == 'POST':
         form = TodoForm(request.POST)
@@ -154,7 +162,7 @@ def todo(request):
     }
     return render(request,"dashboard/todo.html",context)
 
-
+@login_required
 def update_todo(request, pk=None):
     todo = get_object_or_404(Todo, id=pk)
     if request.method == 'POST':
@@ -165,7 +173,7 @@ def update_todo(request, pk=None):
         todo.save()
     return redirect('todo')
 
-
+@login_required
 def delete_todo(request,pk=None):
     Todo.objects.get(id=pk).delete()
     return redirect("todo")
@@ -368,4 +376,25 @@ def register(request):
     return render(request,'dashboard/register.html',context)
 
 
+
+@login_required
+def profile(request):
+    homeworks = Homework.objects.filter(is_finished=False, user=request.user)
+    todos = Todo.objects.filter(is_finished=False, user=request.user)
     
+    homework_done = not homeworks.exists()
+    todos_done = not todos.exists()
+    
+    context = {
+        'homeworks': homeworks,
+        'todos': todos,
+        'homework_done': homework_done,
+        'todos_done': todos_done
+    }
+    return render(request, "dashboard/profile.html", context)
+
+
+class CustomLogoutView(LogoutView):
+    template_name = "dashboard/logout.html"
+    next_page = reverse_lazy('login')
+    http_method_names = ['get', 'post']
